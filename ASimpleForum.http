@@ -1,0 +1,20 @@
+@ASimpleForum_HostAddress = http://localhost:5059
+
+POST {{ASimpleForum_HostAddress}}/login/
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 35
+
+username=johndoe&password=secure123
+###
+POST {{ASimpleForum_HostAddress}}/register/
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 58
+
+username=johndoe&password=secure123&email=johndoe@anon.com
+###
+POST {{ASimpleForum_HostAddress}}/logout/
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 46
+
+sessionId=175cd09b-4eac-4f34-9156-5a09c68a3717
+###
