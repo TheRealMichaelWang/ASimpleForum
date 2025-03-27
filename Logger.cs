@@ -4,7 +4,7 @@
     {
         public static readonly int Info = 1000;
 
-        public static string LogFilePath => Path.Combine(Environment.CurrentDirectory, $"logs_{DateTime.Now.Date.ToString("MM_dd_yyyy")}.db");
+        public static string LogFilePath => Path.Combine(Environment.CurrentDirectory, $"logs_{DateTime.Now.Date.ToString("MM_dd_yyyy")}.txt");
 
         public static async Task Log(string message, int level, Guid? sessionId = null, Guid? userId = null)
         {

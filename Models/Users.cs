@@ -46,5 +46,29 @@ namespace ASimpleForum.Models
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.UseSqlite($"Filename={DatabasePath}");
+
+        public async Task<User?> FindUserAsync(string identifier)
+        {
+            Guid id;
+            if (Guid.TryParse(identifier, out id))
+            {
+                return await Users.FindAsync(id);
+            }
+            else
+            {
+                User? user = await Users.FirstOrDefaultAsync(x => x.Username == identifier);
+                if (user == null)
+                {
+                    user = await Users.FirstOrDefaultAsync(x => x.Email == identifier);
+                }
+                return user;
+            }
+        }
+
+        public async Task<string> GetIdentifier(Guid userId)
+        {
+            User? user = await Users.FindAsync(userId);
+            return user == null ? $"[deleted user]{userId.ToString()}" : user.Username;
+        }
     }
 }

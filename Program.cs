@@ -1,15 +1,14 @@
 using ASimpleForum.Models;
-using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
 
 namespace ASimpleForum
 {
     public class Program
     {
-        [RequiresDynamicCode("Database migrations/creations require dynamic code.")]
         public static void Main(string[] args)
         {
+            Console.WriteLine("ASimpleForum");
+            Console.WriteLine($"Current Working Directory: {Environment.CurrentDirectory}.");
+
             var builder = WebApplication.CreateSlimBuilder(args);
             builder.WebHost.UseKestrelHttpsConfiguration();
 
@@ -22,6 +21,8 @@ namespace ASimpleForum
             using (ForumContext forumContext = new ForumContext())
             {
                 SessionManager sessionManager = new SessionManager(userContext, app);
+                PostOffice postOffice = new PostOffice(messageContext, userContext, sessionManager, app);
+
                 userContext.Database.EnsureCreated();
                 messageContext.Database.EnsureCreated();
                 forumContext.Database.EnsureCreated();

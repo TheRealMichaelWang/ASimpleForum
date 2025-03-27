@@ -1,6 +1,5 @@
 ﻿using ASimpleForum.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 
 namespace ASimpleForum
@@ -34,9 +33,17 @@ namespace ASimpleForum
             this.UserContext = userContext;
             Sessions = new ConcurrentDictionary<Guid, Session>();
 
-            application.MapPost("login", HandleLogin).DisableAntiforgery();
-            application.MapPost("register", HandleRegister).DisableAntiforgery();
-            application.MapPost("logout", HandleLogout).DisableAntiforgery();
+            application.MapPost("login", HandleLogin)
+                .DisableAntiforgery()
+                .Produces<Guid>(StatusCodes.Status200OK, "text/plain")
+                .Produces(StatusCodes.Status400BadRequest);
+            application.MapPost("register", HandleRegister)
+                .DisableAntiforgery()
+                .Produces<Guid>(StatusCodes.Status200OK, "text/plain")
+                .Produces(StatusCodes.Status400BadRequest);
+            application.MapPost("logout", HandleLogout)
+                .DisableAntiforgery()
+                .Produces(StatusCodes.Status401Unauthorized);
         }
 
         public async Task<Session?> GetSession(Guid sessionId)
@@ -59,103 +66,100 @@ namespace ASimpleForum
             return session;
         }
 
+        public async Task<Session?> GetSession(string sessionId)
+        {
+            Guid id;
+            if (!Guid.TryParse(sessionId, out id))
+            {
+                return null;
+            }
+
+            return await GetSession(id);
+        }
+
         private async Task<IResult> HandleLogin([FromForm]string username, [FromForm]string password)
         {
-            User? user = await UserContext.Users.FirstOrDefaultAsync(x => x.Username == username);
-            if (user == null)
-            {
-                user = await UserContext.Users.FirstOrDefaultAsync(x => x.Email == username);
-            }
+            User? user = await UserContext.FindUserAsync(username);
             if (user == null || !user.PasswordMatches(password))
             {
-                return Results.BadRequest("Username or password is invalid.");
+                return Results.Content("Username or password is invalid.", "text/plain", null, StatusCodes.Status400BadRequest);
             }
 
             Guid id = Guid.NewGuid();
             Session session = new Session(id, user.Id);
             if(!Sessions.TryAdd(id, session))
             {
-                return Results.BadRequest("Failed to create new user session; GUID collision occurred.");
+                return Results.Content("Failed to create new user session; GUID collision occurred.", "text/plain", null, StatusCodes.Status400BadRequest);
             }
 
             user.LastLogin = DateTime.UtcNow;
             await UserContext.SaveChangesAsync();
             await Logger.LogAsync($"User {username} logged in.", Logger.Info, session);
 
-            return Results.Ok(id.ToString());
+            return Results.Content(id.ToString(), "text/plain", null, StatusCodes.Status200OK);
         }
 
         private async Task<IResult> HandleRegister([FromForm] string username, [FromForm] string email, [FromForm] string password)
         {
             {
-                User? user = await UserContext.Users.FirstOrDefaultAsync(x => x.Username == username);
-                if (user == null)
+                User? existingUser = await UserContext.FindUserAsync(username);
+                if (existingUser != null)
                 {
-                    user = await UserContext.Users.FirstOrDefaultAsync(x => x.Email == username);
-                }
-                if (user != null)
-                {
-                    return Results.BadRequest("Username or email already in use.");
+                    return Results.Content("Username or email already in use.", "text/plain", null, StatusCodes.Status400BadRequest);
                 }
             }
 
+            User user = new()
             {
-                User user = new()
-                {
-                    Id = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
 
-                    Username = username,
-                    Email = email,
-                    PasswordHash = User.HashPassword(password),
+                Username = username,
+                Email = email,
+                PasswordHash = User.HashPassword(password),
 
-                    IsEmailConfirmed = false,
-                    LastLogin = DateTime.UtcNow,
-                    CreationTimeStamp = DateTime.UtcNow
-                };
+                IsEmailConfirmed = false,
+                LastLogin = DateTime.UtcNow,
+                CreationTimeStamp = DateTime.UtcNow
+            };
 
-                try
-                {
-                    await UserContext.Users.AddAsync(user);
-                    await UserContext.SaveChangesAsync();
-                    await Logger.Log($"User account {username} registered.", Logger.Info, null, user.Id);
-                }
-                catch (InvalidOperationException)
-                {
-                    return Results.BadRequest($"Failed to register account; GUID collision occurred.");
-                }
-
-
-                Guid id = Guid.NewGuid();
-                Session session = new Session(id, user.Id);
-                if (!Sessions.TryAdd(id, session))
-                {
-                    return Results.BadRequest($"Successfully registered user {username} but failed to create new user session; GUID collision occurred.");
-                }
-                await Logger.LogAsync($"User {username} logged in.", Logger.Info, session);
-
-                return Results.Ok(id.ToString());
+            try
+            {
+                await UserContext.Users.AddAsync(user);
+                await UserContext.SaveChangesAsync();
+                await Logger.Log($"User account {username} registered.", Logger.Info, null, user.Id);
             }
+            catch (InvalidOperationException)
+            {
+                return Results.Content($"Failed to register account; GUID collision occurred.", "text/plain", null, StatusCodes.Status400BadRequest);
+            }
+
+
+            Guid id = Guid.NewGuid();
+            Session session = new Session(id, user.Id);
+            if (!Sessions.TryAdd(id, session))
+            {
+                return Results.Content($"Successfully registered user {username} but failed to create new user session; GUID collision occurred.", "text/plain", null, StatusCodes.Status400BadRequest);
+            }
+            await Logger.LogAsync($"User {username} logged in.", Logger.Info, session);
+
+            return Results.Content(id.ToString(), "text/plain", null, StatusCodes.Status200OK);
+            
         }
 
         private async Task<IResult> HandleLogout([FromForm] string sessionId)
         {
-            Guid id;
-            if (!Guid.TryParse(sessionId, out id))
-            {
-                return Results.BadRequest("Invalid GUID provided.");
-            }
-
-            Session? session = await GetSession(id);
+            Session? session = await GetSession(sessionId);
             if (session == null)
             {
-                return Results.BadRequest("Invalid session ID provided or session timed out.");
+                return Results.Content("Invalid session ID provided or session timed out.", "text/plain", null, StatusCodes.Status401Unauthorized);
             }
 
-            if (!Sessions.TryRemove(id, out session))
+            if (!Sessions.TryRemove(session.SessionId, out session))
             {
-                return Results.BadRequest("Unable to remove session.");
+                return Results.Content("Unable to remove session.", "text/plain", null, StatusCodes.Status400BadRequest);
             }
 
+            await Logger.LogAsync($"User logged out.", Logger.Info, session);
             return Results.Ok();
         }
     }

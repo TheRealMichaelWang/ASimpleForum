@@ -16,5 +16,23 @@ POST {{ASimpleForum_HostAddress}}/logout/
 Content-Type: application/x-www-form-urlencoded
 Content-Length: 46
 
-sessionId=175cd09b-4eac-4f34-9156-5a09c68a3717
+sessionId=a8013af5-0204-4e50-9ec8-7ab19a65e4cf
+###
+POST {{ASimpleForum_HostAddress}}/mail/send/
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 102
+
+sessionId=abe65e15-d20c-4cd3-88f3-3b9219fdaca6&recipient=johndoe&subject=Hello World!&body=Bold of you
+###
+POST {{ASimpleForum_HostAddress}}/mail/inbox/
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 110
+
+sessionId=cf2a81e6-65a1-4413-9012-95db4b073c09&offset=0&messageLimit=10&filterUnread=false&filterFlagged=false
+###
+POST {{ASimpleForum_HostAddress}}/mail/msg/
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 89
+
+sessionId=cf2a81e6-65a1-4413-9012-95db4b073c09&msgId=cb25a3d1-c315-49ec-9a0e-91a9b5392fdb
 ###
