@@ -93,8 +93,7 @@ namespace ASimpleForum
                 .Take(messageLimit)
                 .OrderBy(x => x.TimeStamp);
 
-            MailMessage[] messages = await query.ToArrayAsync();
-            SummarizedMessage[] summarizedMessages = await Task.WhenAll(messages.Select(async msg =>
+            SummarizedMessage[] summarizedMessages = await Task.WhenAll((query as IEnumerable<MailMessage>).Select(async msg =>
             {
                 return new SummarizedMessage(
                     msg.Id,
@@ -123,8 +122,7 @@ namespace ASimpleForum
                 .Take(messageLimit)
                 .OrderBy(x => x.TimeStamp);
 
-            MailMessage[] messages = await query.ToArrayAsync();
-            SummarizedMessage[] summarizedMessages = await Task.WhenAll(messages.Select(async msg =>
+            SummarizedMessage[] summarizedMessages = await Task.WhenAll((query as IEnumerable<MailMessage>).Select(async msg =>
             {
                 return new SummarizedMessage(
                     msg.Id,

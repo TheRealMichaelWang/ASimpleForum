@@ -16,7 +16,15 @@ POST {{ASimpleForum_HostAddress}}/logout/
 Content-Type: application/x-www-form-urlencoded
 Content-Length: 46
 
-sessionId=a8013af5-0204-4e50-9ec8-7ab19a65e4cf
+sessionId=394f201a-d0b8-4849-b0d6-7472d6d3444b
+###
+GET {{ASimpleForum_HostAddress}}/user?userId=johndoe
+###
+POST {{ASimpleForum_HostAddress}}/admin/user
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 61
+
+userId=johndoe&sessionId=02a32684-bb82-45ae-af3f-f45a3ce1fc51
 ###
 POST {{ASimpleForum_HostAddress}}/mail/send/
 Content-Type: application/x-www-form-urlencoded

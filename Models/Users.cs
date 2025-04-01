@@ -4,6 +4,13 @@ using System.Text;
 
 namespace ASimpleForum.Models
 {
+    public enum PermissionType
+    {
+        SuperUser=2,
+        Administrator=1,
+        RegisteredUser=0
+    }
+
     public sealed class User
     {
         public required Guid Id { get; set; }
@@ -13,6 +20,7 @@ namespace ASimpleForum.Models
 
         public required byte[] PasswordHash { get; set; }
 
+        public required PermissionType Permissions { get; set; }
         public required bool IsEmailConfirmed { get; set; }
         public required DateTime LastLogin { get; set; }
         public required DateTime CreationTimeStamp { get; set; }

@@ -8,6 +8,18 @@ namespace ASimpleForum.Models
 
         public required string Name { get; set; }
         public required string Description { get; set; }
+
+        public required List<Guid> Moderators { get; set; }
+        public required List<Guid> Blacklist { get; set; }
+        public required List<Guid> Whitelist { get; set; }
+
+        public bool IsPublic => Whitelist.Count > 0;
+
+        public bool IsAuthorized(User? user) => IsPublic
+            || (user != null && (
+            Whitelist.Contains(user.Id) 
+            || user.Permissions >= PermissionType.Administrator
+        ));
     }
 
     public sealed class Post
@@ -18,7 +30,8 @@ namespace ASimpleForum.Models
         public required Guid Author { get; set; }
 
         public required string Title { get; set; }
-        public required string Subject { get; set; }
+        public required string Body { get; set; }
+        public required bool Removed { get; set; }
 
         public required DateTime TimeStamp { get; set; }
     }
@@ -30,6 +43,8 @@ namespace ASimpleForum.Models
 
         public required Guid Author { get; set; }
         public required string Body { get; set; }
+
+        public required DateTime TimeStamp { get; set; }
     }
 
     public sealed class ForumContext : DbContext
